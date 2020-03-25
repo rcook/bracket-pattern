@@ -1,30 +1,3 @@
-pub struct DropGuard<F>
-where
-    F: FnOnce(),
-{
-    func: Option<F>,
-}
-
-impl<F> Drop for DropGuard<F>
-where
-    F: FnOnce(),
-{
-    fn drop(&mut self) {
-        if let Some(func) = self.func.take() {
-            func()
-        }
-    }
-}
-
-// See https://docs.rs/finally-block/0.2.0/finally_block/
-#[allow(dead_code)]
-pub fn drop_guard<F>(func: F) -> DropGuard<F>
-where
-    F: FnOnce(),
-{
-    DropGuard { func: Some(func) }
-}
-
 /// See https://wiki.haskell.org/Bracket_pattern
 /// # Arguments
 ///
@@ -60,10 +33,9 @@ impl Resource {
     }
 }
 
-fn main() -> std::io::Result<()> {
-    let some_condition = true;
+fn demo_bracket(acquire_resource: bool) -> std::io::Result<()> {
     let result: &str = bracket::<_, _, std::io::Error, _, _, _>(
-        || match some_condition {
+        || match acquire_resource {
             true => Ok(Some(Resource::new())),
             false => Ok(None),
         },
@@ -77,5 +49,11 @@ fn main() -> std::io::Result<()> {
         },
     )?;
     println!("result={}", result);
+    Ok(())
+}
+
+fn main() -> std::io::Result<()> {
+    demo_bracket(true)?;
+    demo_bracket(false)?;
     Ok(())
 }
