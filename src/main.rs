@@ -82,6 +82,36 @@ fn demo_drop(acquire_resource: bool) -> std::io::Result<()> {
     Ok(())
 }
 
+#[allow(unreachable_code)]
+#[allow(unused_variables)]
+fn demo_explicit_drop(acquire_resource: bool) -> std::io::Result<()> {
+    struct ResourceHolder {
+        resource: Resource,
+    }
+
+    impl Drop for ResourceHolder {
+        fn drop(&mut self) {
+            self.resource.release()
+        }
+    }
+
+    let resource = match acquire_resource {
+        true => Some(Resource::new()),
+        false => None,
+    };
+    let holder = resource.map(|r| ResourceHolder { resource: r });
+
+    println!("Resource used");
+    return Err(std::io::Error::new(
+        std::io::ErrorKind::Other,
+        "Resource does not leak!",
+    ));
+
+    drop(holder);
+
+    Ok(())
+}
+
 fn demo_bracket(acquire_resource: bool) -> std::io::Result<()> {
     let result: &str = bracket::<_, _, std::io::Error, _, _, _>(
         || match acquire_resource {
@@ -105,17 +135,22 @@ fn demo_bracket(acquire_resource: bool) -> std::io::Result<()> {
 }
 
 fn main() -> std::io::Result<()> {
-    println!("demo_resource_leak(true)");
+    println!("*** demo_resource_leak(true) ***");
     let _ = demo_resource_leak(true);
-    println!("demo_resource_leak(false)");
+    println!("*** demo_resource_leak(false) ***");
     let _ = demo_resource_leak(false);
-    println!("demo_drop(true)");
+    println!("*** demo_drop(true) ***");
     let _ = demo_drop(true);
-    println!("demo_drop(false)");
+    println!("*** demo_drop(false) ***");
     let _ = demo_drop(false);
-    println!("demo_bracket(true)");
+    println!("*** demo_bracket(true) ***");
     let _ = demo_bracket(true);
-    println!("demo_bracket(false)");
+    println!("*** demo_bracket(false) ***");
     let _ = demo_bracket(false);
+
+    println!("*** demo_explicit_drop(true) ***");
+    let _ = demo_explicit_drop(true);
+    println!("*** demo_explicit_drop(false) ***");
+    let _ = demo_explicit_drop(false);
     Ok(())
 }
